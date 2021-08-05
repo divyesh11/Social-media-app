@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Social App</string>
+    <string name="signout">SignOut</string>
+    <string name="username">username</string>
+    <string name="posts">posts</string>
+    <string name="profile">Profile</string>
+</resources>
