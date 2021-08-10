@@ -1,6 +1,7 @@
 package com.example.socialapp.daos
 
 import android.content.Intent
+import android.net.Uri
 import com.example.socialapp.models.Post
 import com.example.socialapp.models.User
 import com.google.android.gms.tasks.Task
@@ -26,6 +27,19 @@ class PostDao {
 
             val currentTime = System.currentTimeMillis()
             val post = Post(text, user, currentTime)
+            postCollections.document().set(post)
+        }
+    }
+
+    fun addpostphoto(text : Uri)
+    {
+        GlobalScope.launch {
+            val currentUserId = auth.currentUser!!.uid
+            val userDao = UserDao()
+            val user = userDao.getUserById(currentUserId).await().toObject(User::class.java)!!
+
+            val currentTime = System.currentTimeMillis()
+            val post = Post("", user, currentTime,text.toString())
             postCollections.document().set(post)
         }
     }

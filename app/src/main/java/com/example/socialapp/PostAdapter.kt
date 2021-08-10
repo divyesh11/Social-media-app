@@ -1,8 +1,11 @@
 package com.example.socialapp
 
+import android.opengl.Visibility
+import android.text.InputFilter
 import android.util.DisplayMetrics
 import android.view.LayoutInflater
 import android.view.View
+import android.view.View.GONE
 import android.view.ViewGroup
 import android.widget.*
 import androidx.core.content.ContextCompat
@@ -22,6 +25,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import kotlin.coroutines.coroutineContext
 
 
 class PostAdapter(options: FirestoreRecyclerOptions<Post>, val listener: MainActivity) : FirestoreRecyclerAdapter<Post, PostAdapter.PostViewHolder>(
@@ -29,6 +33,7 @@ class PostAdapter(options: FirestoreRecyclerOptions<Post>, val listener: MainAct
 ) {
     class PostViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
         val postText: TextView = itemView.findViewById(R.id.postTitle)
+        val imgpost : ImageView = itemView.findViewById(R.id.post)
         val userText: TextView = itemView.findViewById(R.id.userName)
         val createdAt: TextView = itemView.findViewById(R.id.createdAt)
         val likeCount: TextView = itemView.findViewById(R.id.likeCount)
@@ -42,6 +47,7 @@ class PostAdapter(options: FirestoreRecyclerOptions<Post>, val listener: MainAct
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PostViewHolder {
         val viewHolder =  PostViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.item_post, parent, false))
+
         viewHolder.likeButton.setOnClickListener{
             listener.onLikeClicked(snapshots.getSnapshot(viewHolder.adapterPosition).id)
         }
@@ -49,8 +55,14 @@ class PostAdapter(options: FirestoreRecyclerOptions<Post>, val listener: MainAct
             val commentinput=viewHolder.editText.text.toString()
             if(commentinput.isNotEmpty())
             {
-                listener.onCommentButton(snapshots.getSnapshot(viewHolder.adapterPosition).id, commentinput)
-                viewHolder.editText.text.clear()
+                if(commentinput.length <= 300) {
+                    listener.onCommentButton(snapshots.getSnapshot(viewHolder.adapterPosition).id, commentinput)
+                    viewHolder.editText.text.clear()
+                }
+                else
+                {
+                    Toast.makeText(this.listener,"Please Compress Your Post! You cannot Enter more than 40 words",Toast.LENGTH_LONG).show()
+                }
             }
             else {
                 Toast.makeText(parent.context, "Please Enter Your comment", Toast.LENGTH_SHORT).show()
@@ -66,6 +78,17 @@ class PostAdapter(options: FirestoreRecyclerOptions<Post>, val listener: MainAct
         holder.likeCount.text = model.likedBy.size.toString()
         holder.commentCount.text = model.commentedBy.size.toString()
         holder.createdAt.text = Utils.getTimeAgo(model.createdAt)
+
+        if(model.url!=null)
+        {
+//            holder.postText.visibility =View.GONE
+            Glide.with(holder.imgpost.context).load(model.url).circleCrop().into(holder.imgpost)
+            holder.imgpost.visibility = View.VISIBLE
+        }
+        else
+        {
+            holder.imgpost.visibility = View.GONE
+        }
 
 
         val auth = Firebase.auth

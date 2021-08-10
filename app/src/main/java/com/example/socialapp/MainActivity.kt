@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -15,10 +16,9 @@ import com.example.socialapp.models.Post
 import com.example.socialapp.models.User
 import com.firebase.ui.auth.AuthUI
 import com.firebase.ui.firestore.FirestoreRecyclerOptions
+import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.Query
-import com.google.firebase.ktx.Firebase
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -31,14 +31,35 @@ class MainActivity : AppCompatActivity(), IPostAdapter {
     private lateinit var adapter: PostAdapter
     private lateinit var auth : FirebaseAuth
     val TAG="MainActivity"
+    private val RC_PHOTO_PICKER = 2
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         fab.setOnClickListener{
+            if(photopicker.visibility == View.INVISIBLE) {
+                photopicker.visibility = View.VISIBLE
+                textpost.visibility = View.VISIBLE
+            }
+            else
+            {
+                photopicker.visibility = View.GONE
+                textpost.visibility = View.GONE
+            }
+        }
+
+        textpost.setOnClickListener {
             val intent = Intent(this, CreatePostActivity::class.java)
             startActivity(intent)
+        }
+
+        photopicker.setOnClickListener {
+            // ImagePickerButton shows an image picker to upload a image for a message
+            val intent = Intent(Intent.ACTION_GET_CONTENT)
+            intent.type = "image/jpeg"
+            intent.putExtra(Intent.EXTRA_LOCAL_ONLY, true)
+            startActivityForResult(Intent.createChooser(intent, "Complete action using"),RC_PHOTO_PICKER)
         }
         auth= FirebaseAuth.getInstance()
 
@@ -72,7 +93,7 @@ class MainActivity : AppCompatActivity(), IPostAdapter {
     }
 
     override fun onCommentButton(postId: String, text: String) {
-        postDao.updateComments(postId,text)
+        postDao.updateComments(postId, text)
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -87,7 +108,7 @@ class MainActivity : AppCompatActivity(), IPostAdapter {
 
 //        Firebase.auth.signOut()
         val id=item.title
-        Log.d("MainActivity.this",id.toString())
+        Log.d("MainActivity.this", id.toString())
         if(id==getString(R.string.profile))
         {
 //            val intent=Intent(this,prpfile_page_activity::class.java)
@@ -100,18 +121,28 @@ class MainActivity : AppCompatActivity(), IPostAdapter {
             AuthUI.getInstance().signOut(this).addOnCompleteListener {
                 if(it.isSuccessful)
                 {
-                    Toast.makeText(this,"You Are Successfully Sign Out",Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, "You Are Successfully Sign Out", Toast.LENGTH_SHORT).show()
                     val intent = Intent(this, SignInActivity::class.java)
                     startActivity(intent)
                 }
                 else{
-                    Toast.makeText(this,"Error Occured! Please Try Again",Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, "Error Occured! Please Try Again", Toast.LENGTH_SHORT).show()
                     val intent = Intent(this, MainActivity::class.java)
                     startActivity(intent)
                 }
             }
         }
         return true
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        if(requestCode== this.RC_PHOTO_PICKER && resultCode== RESULT_OK)
+        {
+            val imgurl=data?.data
+            postDao.addpostphoto(imgurl!!)
+        }
     }
 
     fun profile()
@@ -121,12 +152,12 @@ class MainActivity : AppCompatActivity(), IPostAdapter {
             val currentUserId = auth.currentUser!!.uid
             user=UserDao().getUserById(currentUserId).await().toObject(User::class.java)!!
         }
-        val intent=Intent(this,prpfile_page_activity::class.java)
+        val intent=Intent(this, prpfile_page_activity::class.java)
         var bundle : Bundle = Bundle()
-        bundle.putString("username",user.displayName.toString())
-        bundle.putString("userimg",user.imageUrl)
-        Log.d(TAG,user.displayName.toString())
-        Log.d(TAG,user.imageUrl)
+        bundle.putString("username", user.displayName.toString())
+        bundle.putString("userimg", user.imageUrl)
+        Log.d(TAG, user.displayName.toString())
+        Log.d(TAG, user.imageUrl)
         intent.putExtras(bundle)
         startActivity(intent)
     }

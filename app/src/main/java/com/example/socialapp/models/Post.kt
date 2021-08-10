@@ -4,5 +4,6 @@ data class Post (
     val text: String = "",
     val createdBy: User = User(),
     val createdAt: Long = 0L,
+    val url : String = "",
     val commentedBy : ArrayList<Post> = ArrayList(),
     val likedBy: ArrayList<String> = ArrayList())
